@@ -1,0 +1,24 @@
+# Site settings
+name: Curz0n's Blog
+email: curzon@foxmail.com
+author: Curz0n
+url: https://curz0n.github.io
+resume_site: https://curz0n.github.io/author
+github: https://github.com/curz0n/
+baseurl: ""
+description: The outer world you see is a reflection of your inner self.
+motto: I am a slow walker, but I never walk backwards.
+banner: 立志欲坚不欲锐，成功在久不在速。
+
+#permalink: /:categories/:year/:month/:day/:title/
+permalink: /:year/:month/:day/:title/
+paginate: 10
+gems: [jekyll-paginate]
+
+exclude: ['README.md', 'Gemfile.lock', 'Gemfile', 'Rakefile']
+
+github_username: Curz0n
+
+# Build settings
+markdown: kramdown
+
